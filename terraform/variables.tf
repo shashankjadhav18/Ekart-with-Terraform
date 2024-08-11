@@ -5,5 +5,12 @@ variable "vpc_cidr" {
 
 variable "public_subnet_cidrs" {
   description = "A list of CIDR blocks for public subnets"
-  type        = list(string)
+  type        = string
 }
+
+variable "instance_type" {
+  description = "The instance type to use"
+  type        = string
+  default     = "t3.medium"
+}
+
