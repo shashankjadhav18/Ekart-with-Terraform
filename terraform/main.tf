@@ -44,6 +44,24 @@ resource "aws_route_table_association" "rta" {
   subnet_id      = aws_subnet.public.id
   route_table_id = aws_route_table.rt.id
 }
+# Generate a new private key
+resource "tls_private_key" "ekart_key" {
+  algorithm = "RSA"
+  rsa_bits  = 2048
+}
+
+# Save the private key locally
+resource "local_file" "private_key" {
+  content  = tls_private_key.ekart_key.private_key_pem
+  filename = "F:/DevOps Projects/DevOps Shack - Ekart project/Keys/ekart_key.pem"  # Save to the current module directory
+  file_permission = "0600"  # Set permissions to ensure security
+}
+
+# Create an AWS Key Pair using the public key
+resource "aws_key_pair" "ekart_key" {
+  key_name   = "ekart_key"
+  public_key = tls_private_key.ekart_key.private_key_openssh
+}
 
 resource "aws_security_group" "main" {
   vpc_id = aws_vpc.main.id
