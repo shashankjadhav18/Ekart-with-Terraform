@@ -51,17 +51,23 @@ resource "tls_private_key" "ekart_key" {
 }
 
 # Save the private key locally
-resource "local_file" "private_key" {
+resource "local_file" "ekart_key" {
   content  = tls_private_key.ekart_key.private_key_pem
-  filename = "F:/DevOps Projects/DevOps Shack - Ekart project/Keys/ekart_key.pem"  # Save to the current module directory
-  file_permission = "0600"  # Set permissions to ensure security
+  filename = "F:/DevOps Projects/DevOps Shack - Ekart project/Keys/ekart_key.pem"
+}
+
+# Extract and save the public key
+resource "local_file" "ekart_key_pub" {
+  content  = tls_private_key.ekart_key.public_key_openssh
+  filename = "F:/DevOps Projects/DevOps Shack - Ekart project/Keys/ekart_key.pub"
 }
 
 # Create an AWS Key Pair using the public key
 resource "aws_key_pair" "ekart_key" {
   key_name   = "ekart_key"
-  public_key = tls_private_key.ekart_key.private_key_openssh
+  public_key = local_file.ekart_key_pub.content
 }
+
 
 resource "aws_security_group" "main" {
   vpc_id = aws_vpc.main.id
@@ -144,7 +150,7 @@ resource "aws_instance" "jenkins" {
     volume_type = "gp3"
   }
   instance_type = var.instance_type
-  key_name = "ekart_key"
+  key_name = aws_key_pair.ekart_key.key_name
   associate_public_ip_address = true
   subnet_id     = aws_subnet.public.id
   security_groups = [aws_security_group.main.id]
@@ -163,7 +169,7 @@ resource "aws_instance" "sonarqube" {
     volume_type = "gp3"
   }
   associate_public_ip_address = true
-  key_name = "ekart_key"
+  key_name = aws_key_pair.ekart_key.key_name
   subnet_id     = aws_subnet.public.id
   security_groups = [aws_security_group.main.id]
 
@@ -176,7 +182,7 @@ resource "aws_instance" "nexus" {
   ami           = data.aws_ami.ubuntu22.id
   instance_type = var.instance_type
   associate_public_ip_address = true
-  key_name = "ekart_key"
+  key_name = aws_key_pair.ekart_key.key_name
   subnet_id     = aws_subnet.public.id
   root_block_device {
     volume_size = 20
